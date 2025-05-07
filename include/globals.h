@@ -29,5 +29,4 @@ extern float energyLwbp;
 extern float totalEnergyPrev;
 
 
-
 #endif

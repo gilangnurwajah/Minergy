@@ -52,6 +52,7 @@ void readPzemData() { // Fungsi membaca data
 
     } else {
         Serial.println("Gagal membaca data fase 1");
+        tegangan1 = arus1 = daya1 = energi1 = frekuensi1 = faktorDaya1 = 0.0;
     }
 
     // Baca data dari fase 2
@@ -68,6 +69,7 @@ void readPzemData() { // Fungsi membaca data
                       tegangan2, arus2, daya2, energi2, frekuensi2, faktorDaya2);
     } else {
         Serial.println("Gagal membaca data fase 2");
+        tegangan2 = arus2 = daya2 = energi2 = frekuensi2 = faktorDaya2 = 0.0;
     }
 
     // Baca data dari fase 3
@@ -84,6 +86,7 @@ void readPzemData() { // Fungsi membaca data
                       tegangan3, arus3, daya3, energi3, frekuensi3, faktorDaya3);
     } else {
         Serial.println("Gagal membaca data fase 3");
+        tegangan3 = arus3 = daya3 = energi3 = frekuensi3 = faktorDaya3 = 0.0;
     }
 
     // **Menjumlahkan total energi hanya dari fase yang terbaca**

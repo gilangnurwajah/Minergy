@@ -6,13 +6,19 @@
 #include "globals.h"
 #include "sendToThingsBoard.h"
 #include "storage_manager.h"
+#include "nextion.h"
+#include "barcode.h"  // Tambahkan ini di bagian atas
+
 
 #define BUTTON_WIFI 13  // Tombol untuk masuk ke mode WiFi Manager
 #define BUTTON_RESET 32  // Tombol reset energi dan biaya
 #define LED_RED 12       // LED Merah (untuk koneksi gagal)
 #define LED_GREEN 14     // LED Hijau (untuk koneksi berhasil)
+#define NEXTION_RX 26
+#define NEXTION_TX 27
 
-WiFiManager wm;
+
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -20,7 +26,8 @@ Preferences preferences;
 
 bool wifiManagerActive = false;
 const char* mqtt_server = "34.232.35.38";  // Pakai IP langsung
-const char *thingsboardToken = "MINERGIoT";  // Ganti dengan token asli
+// const char* mqtt_server = "thingsboard.cloud";  // Pakai IP langsung
+const char *thingsboardToken = "MINERGYYY";  // Ganti dengan token asli
 const int THINGSBOARD_PORT = 1883;
 
 
@@ -28,10 +35,20 @@ void configModeCallback(WiFiManager *myWiFiManager);
 void saveConfig();
 void updateStatusWiFi();
 void blinkLED(int pin, int times, int delayMs);
+void handleNextionInput();
+
+HardwareSerial NextionSerial(1);
+
+WiFiManager wm;
+
+
+
 
 void setup() {
     Serial.begin(115200);
     rtcInit();
+    NextionSerial.begin(9600, SERIAL_8N1, 26, 27);  // RX=GPIO26, TX=GPIO27
+    initNextion(NextionSerial);
     client.setServer(mqtt_server, THINGSBOARD_PORT);
 
     pinMode(BUTTON_WIFI, INPUT_PULLUP);
@@ -62,65 +79,100 @@ void setup() {
 }
 
 void loop() {
-    updateStatusWiFi();
-    client.loop();
-    delay(5000);
+    static unsigned long lastSensorRead = 0;
+    static unsigned long lastWiFiCheck = 0;
+    static unsigned long lastThingsBoardSend = 0;
+    static unsigned long lastNextionUpdate = 0;  // ⬅️ Tambahan ini
 
-    printDateTime();
-    delay(1000);
-    readPzemData();
-    hitungBiaya();
-    saveTotalEnergyPrev(totalEnergyPrev);
+    static const unsigned long sensorInterval = 6000;       // 6 detik
+    static const unsigned long wifiCheckInterval = 10000;   // 10 detik
+    static const unsigned long tbSendInterval = 15000;      // 15 detik
+    static const unsigned long nextionUpdateInterval = 1000; // ⏱️ 1 detik
+
+    // ✅ Selalu tangani input dari Nextion secepat mungkin
+    handleNextionInput();
 
 
-    // Simpan data ke Preferences setiap siklus
-    saveEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
+    // Update Nextion tiap 1 detik
+    if (millis() - lastNextionUpdate > nextionUpdateInterval) {
+        if (currentPage == 1 || currentPage == 2) {
+            updateNextion();
+        }
+        lastNextionUpdate = millis();
+    }
+    
+    // Periksa koneksi WiFi berkala
+    if (millis() - lastWiFiCheck > wifiCheckInterval) {
+        updateStatusWiFi();
+        lastWiFiCheck = millis();
+    }
 
-    static unsigned long lastButtonPress = 0; // Untuk debounce tombol
+    // ✅ Baca sensor & update Nextion berkala
+    if (millis() - lastSensorRead > sensorInterval) {
+        printDateTime();
+        readPzemData();
+        hitungBiaya();
+        // updateNextion();
+        saveTotalEnergyPrev(totalEnergyPrev);
+        saveEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
+        lastSensorRead = millis();
+    }
 
-        // **Tombol Reset Energi**
+    // ✅ Kirim ke ThingsBoard jika WiFi tersedia
+    if (WiFi.status() == WL_CONNECTED && millis() - lastThingsBoardSend > tbSendInterval) {
+        if (!client.connected()) {
+            Serial.println("⚠️ MQTT terputus! Mencoba reconnect...");
+            reconnectMQTT();
+        }
+        sendToThingsBoard();
+        client.loop();
+        lastThingsBoardSend = millis();
+    } else {
+        client.loop(); // Tetap jalankan loop MQTT meski tidak kirim
+    }
+
+    // ✅ Tangani tombol RESET ENERGI
+    static unsigned long lastButtonPress = 0;
     if (digitalRead(BUTTON_RESET) == LOW && millis() - lastButtonPress > 1000) {
         lastButtonPress = millis();
-        delay(50); // Debounce
         if (digitalRead(BUTTON_RESET) == LOW) {
-            delay(3000); // Tahan 3 detik untuk reset
-            if (digitalRead(BUTTON_RESET) == LOW) {
-                resetEnergy();
-                Serial.println("⚡ Total energi direset ke 0 kWh!");
-
-                // **Set nilai energi ke nol**
-                energyWbp = 0.0;
-                energyLwbp = 0.0;
-
-                // **Simpan kembali ke Preferences**
-                saveEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
-
-                Serial.println("🔄 Membaca ulang data PZEM setelah reset...");
-                delay(2000);  // Tunggu sebelum membaca ulang
-                readPzemData();  // Baca ulang data setelah reset            
-            }
-        }
-    }
-
-
-    // **Tombol WiFi Manager**
-    if (digitalRead(BUTTON_WIFI) == LOW && millis() - lastButtonPress > 1000) {
-        lastButtonPress = millis();  
-        delay(50);  // Debounce
-        if (digitalRead(BUTTON_WIFI) == LOW) {
-            delay(3000);
-            if (digitalRead(BUTTON_WIFI) == LOW) {
-                Serial.println("🔵 Masuk Mode WiFi Manager...");
-                if (wm.startConfigPortal("ESP_Config", "1Def23G5#")) {
-                    Serial.println("✅ WiFi dikonfigurasi, keluar dari mode AP.");
-                } else {
-                    Serial.println("⚠️ Timeout, mencoba ulang koneksi terakhir...");
-                    WiFi.reconnect(); // **Lebih baik dari WiFi.begin()**
+            unsigned long pressStart = millis();
+            while (digitalRead(BUTTON_RESET) == LOW) {
+                if (millis() - pressStart > 3000) {
+                    resetEnergy();
+                    energyWbp = 0.0;
+                    energyLwbp = 0.0;
+                    saveEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
+                    Serial.println("⚡ Energi direset dari tombol fisik!");
+                    delay(500);  // optional: kasih delay pendek agar tidak langsung trigger ulang
+                    readPzemData();
+                    break;
                 }
-                updateStatusWiFi();
             }
         }
     }
+
+    // ✅ Tangani tombol WiFi Manager
+    if (digitalRead(BUTTON_WIFI) == LOW && millis() - lastButtonPress > 1000) {
+        lastButtonPress = millis();
+        if (digitalRead(BUTTON_WIFI) == LOW) {
+            unsigned long pressStart = millis();
+            while (digitalRead(BUTTON_WIFI) == LOW) {
+                if (millis() - pressStart > 3000) {
+                    Serial.println("🔵 Masuk Mode WiFi Manager...");
+                    if (wm.startConfigPortal("ESP_Config", "1Def23G5")) {
+                        Serial.println("✅ WiFi dikonfigurasi.");
+                    } else {
+                        Serial.println("⚠️ Timeout WiFi config, reconnect terakhir...");
+                        WiFi.reconnect();
+                    }
+                    updateStatusWiFi();
+                    break;
+                }
+            }
+        }
+    }
+
 
     // Cek WiFi Sebelum Kirim Data
     if (WiFi.status() == WL_CONNECTED) {
@@ -132,6 +184,7 @@ void loop() {
         client.loop();
     } else {
         Serial.println("⚠️ WiFi tidak terhubung, hanya membaca data sensor...");
+        delay(7000);
     }
 }
 
@@ -139,11 +192,22 @@ void loop() {
     Serial.println("Masuk mode konfigurasi WiFi!");
     Serial.print("SSID AP: "); Serial.println(myWiFiManager->getConfigPortalSSID());
     Serial.print("Password AP: ");
-    Serial.println("1Def23G5#");
+    Serial.println("1Def23G5");
     Serial.print("IP AP ESP32: "); Serial.println(WiFi.softAPIP());
 
-    // Ambil nilai parameter dari WiFiManager
-    Serial.println("Token ThingsBoard: ");
+    // Tampilkan halaman ModeAp di Nextion
+    sendCommand("page ModeAp");
+    delay(500);
+
+    // Tampilkan informasi SSID, password dan IP
+    sendCommand("t0.txt=\"" + String(myWiFiManager->getConfigPortalSSID()) + "\"");
+    sendCommand("t1.txt=\"1Def23G5\"");
+    sendCommand("t2.txt=\"" + WiFi.softAPIP().toString() + "\"");
+
+    // Generate QR code dengan SSID, password, dan IP
+    // ✅ Buat QR code untuk koneksi WiFi
+    String ip = WiFi.softAPIP().toString();
+    generateQRCode("ESP_Config", "1Def23G5", ip);
 }
 
 

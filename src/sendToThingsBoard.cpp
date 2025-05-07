@@ -68,29 +68,41 @@ void sendToThingsBoard() {
     lastSendTime = millis();
 
     // **Gunakan ArduinoJson untuk membuat JSON**
-    StaticJsonDocument<512> doc;  
+    // StaticJsonDocument<512> doc;  
+    StaticJsonDocument<1024> doc;
 
-    doc["volt1"] = tegangan1;
-    doc["volt2"] = tegangan2;
-    doc["volt3"] = tegangan3;
-    doc["ampere1"] = arus1;
-    doc["ampere2"] = arus2;
-    doc["ampere3"] = arus3;
-    doc["power1"] = daya1;
-    doc["power2"] = daya2;
-    doc["power3"] = daya3;
-    doc["energy1"] = energi1;
-    doc["energy2"] = energi2;
-    doc["energy3"] = energi3;
-    doc["totalBiaya"] = totalBiaya;
-    doc["totalEnergy"] = totalEnergy;
+    doc["volt1"] = round(tegangan1 * 100) / 100.0;  // 2 desimal
+    doc["volt2"] = round(tegangan2 * 100) / 100.0;  // 2 desimal
+    doc["volt3"] = round(tegangan3 * 100) / 100.0;  // 2 desimal
+    doc["ampere1"] = round(arus1 * 100) / 100.0;    // 2 desimal
+    doc["ampere2"] = round(arus2 * 100) / 100.0;    // 2 desimal
+    doc["ampere3"] = round(arus3 * 100) / 100.0;    // 2 desimal
+    doc["power1"] = round(daya1 * 100) / 100.0;     // 2 desimal
+    doc["power2"] = round(daya2 * 100) / 100.0;     // 2 desimal
+    doc["power3"] = round(daya3 * 100) / 100.0;     // 2 desimal
+    doc["energy1"] = round(energi1 * 100) / 100.0;  // 2 desimal
+    doc["energy2"] = round(energi2 * 100) / 100.0;  // 2 desimal
+    doc["energy3"] = round(energi3 * 100) / 100.0;  // 2 desimal
+    doc["totalBiaya"] = round(totalBiaya * 100) / 100.0;  // 2 desimal
+    doc["totalEnergy"] = round(totalEnergy * 100) / 100.0;  // 2 desimal
+    
     // **Konversi JSON ke String**
-    char payload[512];
+    // char payload[512];
+    char payload[1024];
     serializeJson(doc, payload);
 
     Serial.print("📤 Payload JSON: ");
     Serial.println(payload);
 
     // **Kirim data ke ThingsBoard**
-    client.publish("v1/devices/me/telemetry", payload);
+    // client.publish("v1/devices/me/telemetry", payload);
+    if (client.publish("v1/devices/me/telemetry", payload)) {
+        Serial.println("✅ Berhasil mengirim telemetry!");
+    } else {
+        Serial.println("❌ Gagal mengirim telemetry ke ThingsBoard!");
+        Serial.print("MQTT State: ");
+        Serial.println(client.state());
+
+    }
+    
 }
