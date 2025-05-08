@@ -8,7 +8,7 @@
 #include "storage_manager.h"
 #include "nextion.h"
 #include "barcode.h"  // Tambahkan ini di bagian atas
-
+#include "tarif.h"
 
 #define BUTTON_WIFI 13  // Tombol untuk masuk ke mode WiFi Manager
 #define BUTTON_RESET 32  // Tombol reset energi dan biaya
@@ -42,10 +42,13 @@ HardwareSerial NextionSerial(1);
 WiFiManager wm;
 
 
-
-
 void setup() {
     Serial.begin(115200);
+
+    //untuk input
+    storageInit(); 
+    loadTarifFromStorage();
+
     rtcInit();
     NextionSerial.begin(9600, SERIAL_8N1, 26, 27);  // RX=GPIO26, TX=GPIO27
     initNextion(NextionSerial);

@@ -17,12 +17,17 @@ extern float faktorDaya1, faktorDaya2, faktorDaya3;
 
 extern float totalEnergy;
 extern float totalBiaya; //untuk pengiriman ke TB
-const float hargaListrik = 1444.70;  // Sesuaikan dengan tarif listrik per kWh
+// const float hargaListrik = 1444.70;  // Sesuaikan dengan tarif listrik per kWh
 
 extern float biayaWbp;
 extern float biayaLwbp;
-const float hargaLwbp = 1444.70;  // Tarif LWBP per kWh
-const float hargaWbp = 1670.00;   // Tarif WBP per kWh
+// const float hargaLwbp = 1444.70;  // Tarif LWBP per kWh
+// const float hargaWbp = 1670.00;   // Tarif WBP per kWh
+
+// Tarif dan biaya
+extern float hargaListrik; // Tarif Reguler
+extern float hargaWbp;     // Tarif WBP
+extern float hargaLwbp;    // Tarif LWBP
 
 extern float energyWbp;
 extern float energyLwbp;

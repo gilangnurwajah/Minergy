@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+String getCommand(const String& command);
+
 void initNextion(HardwareSerial &serial);
 void updateNextion();  // Kirim semua data global ke Nextion
 

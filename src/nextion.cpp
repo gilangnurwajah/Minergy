@@ -6,11 +6,13 @@
 #include <WiFi.h>
 #include "barcode.h"  // Pastikan ditambahkan di nextion.cpp
 #include <WiFiManager.h>
+#include "tarif.h"
 
+//untuk input
+String tarifInputBuffer = "";
 
 
 extern WiFiManager wm;
-
 extern void updateStatusWiFi();
 
 HardwareSerial* nextionSerial;
@@ -28,6 +30,23 @@ void sendCommand(const String& cmd) {
     nextionSerial->write(0xFF);
 }
 
+// Fungsi getCommand untuk mengambil data dari Nextion
+String getCommand(const String& command) {
+    String response = "";
+    sendCommand(command);  // Mengirim perintah ke Nextion
+    
+    // Menunggu respon dari Nextion
+    delay(100);  // Pastikan delay cukup untuk Nextion mengirimkan respon
+    
+    while (nextionSerial->available()) {
+        char c = nextionSerial->read();  // Membaca karakter dari serial
+        if (c != 0xFF) {  // Hanya ambil data yang valid
+            response += c;
+        }
+    }
+    return response;  // Mengembalikan nilai yang diterima
+}
+
 void handleNextionInput() {
     while (nextionSerial->available()) {
         String input = "";
@@ -41,16 +60,16 @@ void handleNextionInput() {
                 if (ffCount >= 3) break;
             } else {
                 input += c;
-                ffCount = 0;  // reset jika bukan 0xFF
+                ffCount = 0;
             }
         }
 
-        // // Abaikan input kosong
-        // if (input.length() > 0) {
-        //     Serial.print("📥 Nextion kirim: ");
-        //     Serial.println(input);
-        // }
-        
+        // Deteksi input tarif dari Nextion
+        if (input.startsWith("REG:")) {
+            Serial.println("📜 Input tarif REG diterima: " + input); 
+            prosesInputTarif(input);
+        }
+
         // Deteksi halaman aktif
         if (input.indexOf("Monitor1") >= 0) {
             currentPage = 1;
@@ -65,6 +84,61 @@ void handleNextionInput() {
         } else if (input.indexOf("Reset") >= 0) {
             currentPage = 3;
             Serial.println("📄 Halaman aktif: Reset");
+        } else if (input.indexOf("TarifReguler") >= 0) {
+            currentPage = 5;
+            Serial.println("📄 Halaman aktif: TarifReguler");
+        } else if (input.indexOf("TWP") >= 0) {
+            currentPage = 6;
+            Serial.println("📄 Halaman aktif: TWP");
+
+            sendCommand("TWP.t0.txt=\"" + String(hargaWbp, 2) + "\"");
+            sendCommand("TWP.t1.txt=\"" + String(hargaLwbp, 2) + "\"");
+        } else if (input.indexOf("Configuration") >= 0) {
+            currentPage = 3;
+            Serial.println("📄 Halaman aktif: Configuration");
+        } else if (input.indexOf("ModeAp") >= 0) {
+            currentPage = 4;
+            Serial.println("📄 Halaman aktif: ModeAp");
+
+            String ssid = WiFi.SSID();
+            String password = "1Def23G5";
+            IPAddress ip = WiFi.softAPIP();
+            String ipStr = ip.toString();
+
+            delay(300);
+            sendCommand("t0.txt=\"" + ssid + "\"");
+            sendCommand("t1.txt=\"" + password + "\"");
+            sendCommand("t2.txt=\"" + ipStr + "\"");
+
+            generateQRCode(ssid, password, ipStr);
+        }
+
+        // Perintah WiFi AP Mode
+        if (input.indexOf("APMODE") >= 0) {
+            Serial.println("🌐 Perintah APMODE diterima dari Nextion");
+
+            WiFi.disconnect(true);   // Tambahan agar AP Mode bisa dimulai
+            delay(1000);
+
+            if (wm.startConfigPortal("ESP_Config", "1Def23G5")) {
+                Serial.println("✅ WiFi dikonfigurasi");
+
+                String ssid = WiFi.SSID();
+                IPAddress ip = WiFi.softAPIP();
+                String ipStr = ip.toString();
+
+                sendCommand("page ModeAp");
+                delay(500);
+                sendCommand("t0.txt=\"" + ssid + "\"");
+                sendCommand("t1.txt=\"1Def23G5\"");
+                sendCommand("t2.txt=\"" + ipStr + "\"");
+            } else {
+                Serial.println("⚠️ Timeout, mencoba ulang koneksi...");
+                WiFi.reconnect();
+            }
+
+            updateStatusWiFi();
+            sendCommand("Configuration.t0.txt=\"AP Mode Aktif\"");
         }
 
         // Tombol reset energi
@@ -83,40 +157,8 @@ void handleNextionInput() {
             updateNextion();
         }
 
-        // Halaman konfigurasi
-        else if (input.indexOf("Configuration") >= 0) {
-            currentPage = 3;
-            Serial.println("📄 Halaman aktif: Configuration");
-        }
-
-        // Perintah WiFi AP Mode
-        else if (input.indexOf("APMODE") >= 0) {
-            Serial.println("🌐 Perintah APMODE diterima dari Nextion");
-            if (wm.startConfigPortal("ESP_Config", "1Def23G5")) {
-                Serial.println("✅ WiFi dikonfigurasi");
-
-                // ✅ Tampilkan SSID, Password, dan IP di halaman ModeAp
-                String ssid = WiFi.SSID();
-                IPAddress ip = WiFi.softAPIP();
-                String ipStr = ip.toString();
-
-                sendCommand("page ModeAp");  // Pastikan berada di halaman ModeAp
-                delay(500);
-
-                sendCommand("t0.txt=\"" + ssid + "\"");
-                sendCommand("t1.txt=\"1Def23G5\""); // Password default AP
-                sendCommand("t2.txt=\"" + ipStr + "\"");
-
-            } else {
-                Serial.println("⚠️ Timeout, mencoba ulang koneksi...");
-                WiFi.reconnect();
-            }
-            updateStatusWiFi();
-            sendCommand("Configuration.t0.txt=\"AP Mode Aktif\"");
-        }
-
         // Perintah restart ESP
-        else if (input.indexOf("ESP_RESET") >= 0) {
+        if (input.indexOf("ESP_RESET") >= 0) {
             Serial.println("🔁 Restart dari Nextion!");
             sendCommand("t0.txt=\"Restarting...\"");
             Serial.flush();
@@ -124,22 +166,6 @@ void handleNextionInput() {
             delay(300);
             ESP.restart();
         }
-        else if (input.indexOf("ModeAp") >= 0) {
-            currentPage = 4;
-            Serial.println("📄 Halaman aktif: ModeAp");
-        
-            String ssid = WiFi.SSID();  // atau bisa hardcode: "ESP_Config"
-            String password = "1Def23G5";
-            IPAddress ip = WiFi.softAPIP();
-            String ipStr = ip.toString();
-        
-            delay(300);  // Pastikan sudah di halaman ModeAp
-            sendCommand("t0.txt=\"" + ssid + "\"");
-            sendCommand("t1.txt=\"" + password + "\"");
-            sendCommand("t2.txt=\"" + ipStr + "\"");
-        
-            generateQRCode(ssid, password, ipStr);
-        }       
     }
 }
 
@@ -159,6 +185,9 @@ void updateMonitor1() {
 
     sendCommand("Monitor1.t9.txt=\"Rp " + String(totalBiaya, 1) + "\"");
     sendCommand("Monitor1.t10.txt=\"" + String(totalEnergy, 2) + " kWh\"");
+
+    sendCommand("Monitor1.t11.txt=\"" + String(hargaListrik, 2) + "\"");
+
 
      // Tambahkan bagian ini untuk waktu dan tanggal
      DateTime now = getRTCNow();
@@ -190,6 +219,21 @@ void updateMonitor2() {
     // bedanya di sini:
     sendCommand("Monitor2.t9.txt=\"Rp " + String(biayaWbp + biayaLwbp, 2) + "\"");
     sendCommand("Monitor2.t10.txt=\"" + String(totalEnergy, 2) + " kWh\"");
+
+    sendCommand("Monitor2.t11.txt=\"WBP: Rp " + String(hargaWbp, 2) + "\"");
+    sendCommand("Monitor2.t12.txt=\"LWBP: Rp " + String(hargaLwbp, 2) + "\"");
+
+    DateTime now = getRTCNow();
+
+     char tanggal[20];
+     char waktu[20];
+ 
+     sprintf(tanggal, "%02d/%02d/%04d", now.day(), now.month(), now.year());
+     sprintf(waktu, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+ 
+     sendCommand("Monitor2.t13.txt=\"" + String(tanggal) + "\"");
+     sendCommand("Monitor2.t14.txt=\"" + String(waktu) + "\"");
+
 }
 
 void updateNextion() {
@@ -201,3 +245,4 @@ void updateNextion() {
         updateMonitor2();
     }
 }
+

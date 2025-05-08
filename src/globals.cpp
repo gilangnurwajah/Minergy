@@ -18,3 +18,8 @@ float biayaWbp = 0.0;
 float biayaLwbp = 0.0;
 float totalEnergyPrev = 0.0;
 
+// Tarif awal bisa diubah saat runtime
+float hargaListrik = 1444.70;
+float hargaWbp = 1670.00;
+float hargaLwbp = 1444.70;
+

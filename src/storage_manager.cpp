@@ -58,3 +58,32 @@ float loadTotalEnergyPrev() {
     preferences.end();
     return value;
 }
+
+// ----------------- Penyimpanan Tarif -----------------
+
+void saveHargaListrik(float harga) {
+    preferences.begin("tarif", false);  // Gunakan namespace baru
+    preferences.putFloat("hargaReg", harga);
+    preferences.end();
+}
+
+void saveHargaTWP(float wbp, float lwbp) {
+    preferences.begin("tarif", false);
+    preferences.putFloat("hargaWbp", wbp);
+    preferences.putFloat("hargaLwbp", lwbp);
+    preferences.end();
+}
+
+float loadHargaListrik() {
+    preferences.begin("tarif", true);
+    float value = preferences.getFloat("hargaReg", 1444.70); // Default
+    preferences.end();
+    return value;
+}
+
+void loadHargaTWP(float &wbp, float &lwbp) {
+    preferences.begin("tarif", true);
+    wbp = preferences.getFloat("hargaWbp", 1670.00);
+    lwbp = preferences.getFloat("hargaLwbp", 1444.70);
+    preferences.end();
+}
