@@ -92,7 +92,7 @@ void readPzemData() { // Fungsi membaca data
     // **Menjumlahkan total energi hanya dari fase yang terbaca**
     totalEnergy = energi1 + energi2 + energi3;
     totalBiaya = totalEnergy * hargaListrik;
-    Serial.printf(" Total Biaya: Rp %.2f\n", totalBiaya);
+    Serial.printf("Total Biaya: Rp %.2f\n", totalBiaya);
     Serial.printf("Total Energy: %.3f kWh\n", totalEnergy);
     }
 
@@ -129,13 +129,15 @@ void readPzemData() { // Fungsi membaca data
         // Hitung biaya berdasarkan energi yang digunakan dalam masing-masing periode
         biayaWbp = energyWbp * hargaWbp;
         biayaLwbp = energyLwbp * hargaLwbp;
-    
+        
+        BiayaTWP = biayaWbp + biayaLwbp;
+        TotalPower = daya1 + daya2 + daya3;
         // Simpan total energi saat ini untuk pembacaan berikutnya
         totalEnergyPrev = totalEnergy;
     
         // Cetak hasil
-        Serial.printf("🔢 Biaya WBP: Rp %.2f | Biaya LWBP: Rp %.2f\n", biayaWbp, biayaLwbp);
-        Serial.printf("⚡ Energi WBP: %.3f kWh | Energi LWBP: %.3f kWh\n", energyWbp, energyLwbp);
+        Serial.printf(" Biaya WBP: Rp %.2f | Biaya LWBP: Rp %.2f\n", biayaWbp, biayaLwbp);
+        Serial.printf(" Energi WBP: %.3f kWh | Energi LWBP: %.3f kWh\n", energyWbp, energyLwbp);
     }
 
     uint16_t calculateCRC(uint8_t *buffer, uint8_t length) {

@@ -11,13 +11,11 @@ void saveEnergyData(float energyWbp, float energyLwbp, float biayaWbp, float bia
 void loadEnergyData(float &energyWbp, float &energyLwbp, float &biayaWbp, float &biayaLwbp);
 void saveTotalEnergyPrev(float energy); // Tambahkan deklarasi ini
 
-
 // Tambahan fungsi untuk tarif
 void saveHargaListrik(float harga);
 void saveHargaTWP(float wbp, float lwbp);
 float loadHargaListrik();
 void loadHargaTWP(float &wbp, float &lwbp);
-
 
 #endif
 

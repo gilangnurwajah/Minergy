@@ -16,7 +16,7 @@ void loadEnergyData(float &energyWbp, float &energyLwbp, float &biayaWbp, float 
     biayaWbp = preferences.getFloat("biayaWbp", 0.0);
     biayaLwbp = preferences.getFloat("biayaLwbp", 0.0);
 
-    Serial.printf("📤 Memuat Data: WBP=%.3f kWh, LWBP=%.3f kWh\n", energyWbp, energyLwbp);
+    Serial.printf(" Memuat Data: WBP=%.3f kWh, LWBP=%.3f kWh\n", energyWbp, energyLwbp);
 
     preferences.end();
 }
@@ -27,15 +27,15 @@ void saveEnergyData(float energyWbp, float energyLwbp, float biayaWbp, float bia
     float prevEnergyWbp = preferences.getFloat("energyWbp", 0.0);
     float prevEnergyLwbp = preferences.getFloat("energyLwbp", 0.0);
 
-    Serial.printf("🔍 Sebelum Menyimpan: WBP=%.3f kWh, LWBP=%.3f kWh (sebelumnya WBP=%.3f, LWBP=%.3f)\n",
+    Serial.printf(" Sebelum Menyimpan: WBP=%.3f kWh, LWBP=%.3f kWh (sebelumnya WBP=%.3f, LWBP=%.3f)\n",
                   energyWbp, energyLwbp, prevEnergyWbp, prevEnergyLwbp);
 
     if (energyWbp != prevEnergyWbp || energyLwbp != prevEnergyLwbp) {
-        Serial.println("💾 Data berubah, menyimpan ulang...");
+        Serial.println(" Data berubah, menyimpan ulang...");
         preferences.putFloat("energyWbp", energyWbp);
         preferences.putFloat("energyLwbp", energyLwbp);
     } else {
-        Serial.println("✅ Data tidak berubah, tidak disimpan ulang.");
+        Serial.println(" Data tidak berubah, tidak disimpan ulang.");
     }
 
     preferences.putFloat("biayaWbp", biayaWbp);

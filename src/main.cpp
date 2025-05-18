@@ -17,8 +17,6 @@
 #define NEXTION_RX 26
 #define NEXTION_TX 27
 
-
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -27,7 +25,7 @@ Preferences preferences;
 bool wifiManagerActive = false;
 const char* mqtt_server = "34.232.35.38";  // Pakai IP langsung
 // const char* mqtt_server = "thingsboard.cloud";  // Pakai IP langsung
-const char *thingsboardToken = "MINERGYYY";  // Ganti dengan token asli
+const char *thingsboardToken = "Minergy1";  // Ganti dengan token asli
 const int THINGSBOARD_PORT = 1883;
 
 
@@ -69,15 +67,12 @@ void setup() {
     updateStatusWiFi();
     pzemInit();
 
-    // Inisialisasi penyimpanan data
-    storageInit();
-
     // Load data dari penyimpanan
     loadEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
-    Serial.printf("✅ Data awal: WBP=%.3f kWh, LWBP=%.3f kWh\n", energyWbp, energyLwbp);
+    Serial.printf(" Data awal: WBP=%.3f kWh, LWBP=%.3f kWh\n", energyWbp, energyLwbp);
 
     totalEnergyPrev = loadTotalEnergyPrev();
-    Serial.printf("🔄 Memuat totalEnergyPrev: %.3f kWh\n", totalEnergyPrev);
+    Serial.printf(" Memuat totalEnergyPrev: %.3f kWh\n", totalEnergyPrev);
 
 }
 
@@ -87,10 +82,10 @@ void loop() {
     static unsigned long lastThingsBoardSend = 0;
     static unsigned long lastNextionUpdate = 0;  // ⬅️ Tambahan ini
 
-    static const unsigned long sensorInterval = 6000;       // 6 detik
-    static const unsigned long wifiCheckInterval = 10000;   // 10 detik
+    static const unsigned long sensorInterval = 2000;       // 6 detik
+    static const unsigned long wifiCheckInterval = 8000;   // 10 detik
     static const unsigned long tbSendInterval = 15000;      // 15 detik
-    static const unsigned long nextionUpdateInterval = 1000; // ⏱️ 1 detik
+    static const unsigned long nextionUpdateInterval = 300; // ⏱️ 1 detik
 
     // ✅ Selalu tangani input dari Nextion secepat mungkin
     handleNextionInput();
@@ -101,6 +96,8 @@ void loop() {
         if (currentPage == 1 || currentPage == 2) {
             updateNextion();
         }
+            updateGlobalTimeDate();
+
         lastNextionUpdate = millis();
     }
     
@@ -122,17 +119,27 @@ void loop() {
     }
 
     // ✅ Kirim ke ThingsBoard jika WiFi tersedia
-    if (WiFi.status() == WL_CONNECTED && millis() - lastThingsBoardSend > tbSendInterval) {
+    static unsigned long lastWiFiMessage = 0;
+
+    if (WiFi.status() == WL_CONNECTED) {
         if (!client.connected()) {
-            Serial.println("⚠️ MQTT terputus! Mencoba reconnect...");
+            Serial.println(" MQTT terputus! Mencoba reconnect...");
             reconnectMQTT();
         }
-        sendToThingsBoard();
+    
+        if (millis() - lastThingsBoardSend > tbSendInterval) {
+            sendToThingsBoard();
+            lastThingsBoardSend = millis();
+        }
         client.loop();
-        lastThingsBoardSend = millis();
     } else {
-        client.loop(); // Tetap jalankan loop MQTT meski tidak kirim
+        if (millis() - lastWiFiMessage > 7000) {
+            Serial.println("⚠️ WiFi tidak terhubung, hanya membaca data sensor...");
+            lastWiFiMessage = millis();
+        }
+        client.loop();  // Tetap jalankan loop MQTT meskipun offline
     }
+    
 
     // ✅ Tangani tombol RESET ENERGI
     static unsigned long lastButtonPress = 0;
@@ -176,19 +183,6 @@ void loop() {
         }
     }
 
-
-    // Cek WiFi Sebelum Kirim Data
-    if (WiFi.status() == WL_CONNECTED) {
-        if (!client.connected()) {
-            Serial.println("⚠️ MQTT terputus! Mencoba reconnect...");
-            reconnectMQTT();
-        }
-        sendToThingsBoard();
-        client.loop();
-    } else {
-        Serial.println("⚠️ WiFi tidak terhubung, hanya membaca data sensor...");
-        delay(7000);
-    }
 }
 
     void configModeCallback(WiFiManager *myWiFiManager) {
@@ -219,11 +213,9 @@ void updateStatusWiFi() {
         blinkLED(LED_GREEN, 3, 300);
         digitalWrite(LED_GREEN, HIGH);
         digitalWrite(LED_RED, LOW);
-        Serial.println("✅ WiFi Terhubung!");
     } else {
         digitalWrite(LED_GREEN, LOW);
         digitalWrite(LED_RED, HIGH);
-        Serial.println("❌ WiFi Tidak Terhubung!");
     }
 }
 

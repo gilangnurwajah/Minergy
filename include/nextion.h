@@ -15,5 +15,5 @@ extern int currentPage;
 extern bool requestApMode;
 
 void sendCommand(const String &cmd);
-
+void updateGlobalTimeDate();
 #endif

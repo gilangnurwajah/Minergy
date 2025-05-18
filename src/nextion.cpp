@@ -73,32 +73,32 @@ void handleNextionInput() {
         // Deteksi halaman aktif
         if (input.indexOf("Monitor1") >= 0) {
             currentPage = 1;
-            Serial.println("📄 Halaman aktif: Monitor1");
+            Serial.println("Halaman aktif: Monitor1");
             delay(300);
             updateMonitor1();
         } else if (input.indexOf("Monitor2") >= 0) {
             currentPage = 2;
-            Serial.println("📄 Halaman aktif: Monitor2");
+            Serial.println("Halaman aktif: Monitor2");
             delay(300);
             updateMonitor2();  
         } else if (input.indexOf("Reset") >= 0) {
             currentPage = 3;
-            Serial.println("📄 Halaman aktif: Reset");
+            Serial.println("Halaman aktif: Reset");
         } else if (input.indexOf("TarifReguler") >= 0) {
             currentPage = 5;
-            Serial.println("📄 Halaman aktif: TarifReguler");
+            Serial.println("Halaman aktif: TarifReguler");
         } else if (input.indexOf("TWP") >= 0) {
             currentPage = 6;
-            Serial.println("📄 Halaman aktif: TWP");
+            Serial.println("Halaman aktif: TWP");
 
             sendCommand("TWP.t0.txt=\"" + String(hargaWbp, 2) + "\"");
             sendCommand("TWP.t1.txt=\"" + String(hargaLwbp, 2) + "\"");
         } else if (input.indexOf("Configuration") >= 0) {
             currentPage = 3;
-            Serial.println("📄 Halaman aktif: Configuration");
+            Serial.println("Halaman aktif: Configuration");
         } else if (input.indexOf("ModeAp") >= 0) {
             currentPage = 4;
-            Serial.println("📄 Halaman aktif: ModeAp");
+            Serial.println("Halaman aktif: ModeAp");
 
             String ssid = WiFi.SSID();
             String password = "1Def23G5";
@@ -118,7 +118,7 @@ void handleNextionInput() {
             Serial.println("🌐 Perintah APMODE diterima dari Nextion");
 
             WiFi.disconnect(true);   // Tambahan agar AP Mode bisa dimulai
-            delay(1000);
+            delay(500);
 
             if (wm.startConfigPortal("ESP_Config", "1Def23G5")) {
                 Serial.println("✅ WiFi dikonfigurasi");
@@ -217,11 +217,11 @@ void updateMonitor2() {
     sendCommand("Monitor2.t8.txt=\"" + String(daya3, 1) + " W\"");
 
     // bedanya di sini:
-    sendCommand("Monitor2.t9.txt=\"Rp " + String(biayaWbp + biayaLwbp, 2) + "\"");
+    sendCommand("Monitor2.t9.txt=\"Rp " + String(BiayaTWP, 2) + "\"");
     sendCommand("Monitor2.t10.txt=\"" + String(totalEnergy, 2) + " kWh\"");
 
-    sendCommand("Monitor2.t11.txt=\"WBP: Rp " + String(hargaWbp, 2) + "\"");
-    sendCommand("Monitor2.t12.txt=\"LWBP: Rp " + String(hargaLwbp, 2) + "\"");
+    sendCommand("Monitor2.t11.txt=\"" + String(hargaWbp, 2) + "\"");
+    sendCommand("Monitor2.t12.txt=\" " + String(hargaLwbp, 2) + "\"");
 
     DateTime now = getRTCNow();
 
@@ -234,6 +234,19 @@ void updateMonitor2() {
      sendCommand("Monitor2.t13.txt=\"" + String(tanggal) + "\"");
      sendCommand("Monitor2.t14.txt=\"" + String(waktu) + "\"");
 
+}
+
+void updateGlobalTimeDate() {
+    DateTime now = getRTCNow();
+
+    char tanggal[20];
+    char waktu[20];
+
+    sprintf(tanggal, "%02d/%02d/%04d", now.day(), now.month(), now.year());
+    sprintf(waktu, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+
+    sendCommand("time.txt=\"" + String(waktu) + "\"");
+    sendCommand("date.txt=\"" + String(tanggal) + "\"");
 }
 
 void updateNextion() {

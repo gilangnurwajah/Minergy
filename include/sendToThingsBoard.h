@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 
-
 // Deklarasi fungsi
 void sendToThingsBoard();
 void reconnectMQTT();

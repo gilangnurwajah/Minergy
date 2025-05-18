@@ -18,7 +18,7 @@ void rtcInit() {
 
 void printDateTime() {
     DateTime now = rtc.now();
-    Serial.printf("🕒 Waktu: %02d:%02d:%02d %02d/%02d/%04d\n",
+    Serial.printf(" Waktu: %02d:%02d:%02d %02d/%02d/%04d\n",
                   now.hour(), now.minute(), now.second(),
                   now.day(), now.month(), now.year());
 }

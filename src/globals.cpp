@@ -23,3 +23,6 @@ float hargaListrik = 1444.70;
 float hargaWbp = 1670.00;
 float hargaLwbp = 1444.70;
 
+float BiayaTWP = 0.0;
+float TotalPower = 0.0;
+bool apModeRequest = false;

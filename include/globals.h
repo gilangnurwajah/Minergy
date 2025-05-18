@@ -4,7 +4,6 @@
 #include <Preferences.h>
 #include <Arduino.h>
 
-
 // extern float totalEnergy;
 extern float previousEnergy;
 
@@ -33,5 +32,7 @@ extern float energyWbp;
 extern float energyLwbp;
 extern float totalEnergyPrev;
 
-
+extern bool apModeRequest;
+extern float BiayaTWP;
+extern float TotalPower;
 #endif
