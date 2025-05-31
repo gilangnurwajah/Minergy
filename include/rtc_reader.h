@@ -7,5 +7,6 @@
 void rtcInit();
 void printDateTime();
 DateTime getRTCNow();
+extern RTC_DS3231 rtc;  // <-- Tambahkan ini agar rtc dikenali di main.cpp
 
 #endif

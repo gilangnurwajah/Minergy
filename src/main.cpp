@@ -67,6 +67,10 @@ void setup() {
     updateStatusWiFi();
     pzemInit();
 
+    // Kalibrasi RTC (aktifkan sekali saja, lalu komentar)
+    // rtc.adjust(DateTime(2025, 5, 23, 16, 41, 50));
+    // printDateTime();
+
     // Load data dari penyimpanan
     loadEnergyData(energyWbp, energyLwbp, biayaWbp, biayaLwbp);
     Serial.printf(" Data awal: WBP=%.3f kWh, LWBP=%.3f kWh\n", energyWbp, energyLwbp);
@@ -82,10 +86,10 @@ void loop() {
     static unsigned long lastThingsBoardSend = 0;
     static unsigned long lastNextionUpdate = 0;  // ⬅️ Tambahan ini
 
-    static const unsigned long sensorInterval = 2000;       // 6 detik
+    static const unsigned long sensorInterval = 1500;       // 6 detik
     static const unsigned long wifiCheckInterval = 8000;   // 10 detik
     static const unsigned long tbSendInterval = 15000;      // 15 detik
-    static const unsigned long nextionUpdateInterval = 300; // ⏱️ 1 detik
+    static const unsigned long nextionUpdateInterval = 1000; // ⏱️ 1 detik
 
     // ✅ Selalu tangani input dari Nextion secepat mungkin
     handleNextionInput();

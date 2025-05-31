@@ -68,6 +68,14 @@ void handleNextionInput() {
         if (input.startsWith("REG:")) {
             Serial.println("📜 Input tarif REG diterima: " + input); 
             prosesInputTarif(input);
+            continue;
+            delay(10);
+        }
+
+        if (input.indexOf("KIRIM_TWP") >= 0) {
+            Serial.println("📥 Input tarif TWP diterima");
+            prosesInputTarifTWP(input);
+            delay(10);
         }
 
         // Deteksi halaman aktif
@@ -165,7 +173,7 @@ void handleNextionInput() {
             nextionSerial->flush();
             delay(300);
             ESP.restart();
-        }
+        }   
     }
 }
 
@@ -178,7 +186,8 @@ void updateMonitor1() {
     sendCommand("Monitor1.t3.txt=\"" + String(tegangan2, 1) + " V\"");
     sendCommand("Monitor1.t4.txt=\"" + String(arus2, 2) + " A\"");
     sendCommand("Monitor1.t5.txt=\"" + String(daya2, 1) + " W\"");
-
+    delay(10);
+    
     sendCommand("Monitor1.t6.txt=\"" + String(tegangan3, 1) + " V\"");
     sendCommand("Monitor1.t7.txt=\"" + String(arus3, 2) + " A\"");
     sendCommand("Monitor1.t8.txt=\"" + String(daya3, 1) + " W\"");
@@ -187,7 +196,7 @@ void updateMonitor1() {
     sendCommand("Monitor1.t10.txt=\"" + String(totalEnergy, 2) + " kWh\"");
 
     sendCommand("Monitor1.t11.txt=\"" + String(hargaListrik, 2) + "\"");
-
+    delay(10);
 
      // Tambahkan bagian ini untuk waktu dan tanggal
      DateTime now = getRTCNow();
@@ -211,6 +220,7 @@ void updateMonitor2() {
     sendCommand("Monitor2.t3.txt=\"" + String(tegangan2, 1) + " V\"");
     sendCommand("Monitor2.t4.txt=\"" + String(arus2, 2) + " A\"");
     sendCommand("Monitor2.t5.txt=\"" + String(daya2, 1) + " W\"");
+    delay(10);
 
     sendCommand("Monitor2.t6.txt=\"" + String(tegangan3, 1) + " V\"");
     sendCommand("Monitor2.t7.txt=\"" + String(arus3, 2) + " A\"");
@@ -222,6 +232,7 @@ void updateMonitor2() {
 
     sendCommand("Monitor2.t11.txt=\"" + String(hargaWbp, 2) + "\"");
     sendCommand("Monitor2.t12.txt=\" " + String(hargaLwbp, 2) + "\"");
+    delay(10);
 
     DateTime now = getRTCNow();
 
