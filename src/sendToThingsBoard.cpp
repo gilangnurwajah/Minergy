@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "pzem_reader.h"
 #include <ArduinoJson.h>
+#include "RTC_reader.h"
 
 // MQTT Client
 extern WiFiClient espClient;
@@ -33,7 +34,7 @@ bool reconnectWiFiNonBlocking() {
     }
 
     if (millis() - wifiStartAttemptTime > wifiTimeout) {
-        Serial.println("❌ Timeout koneksi WiFi.");
+        Serial.println(" Timeout koneksi WiFi.");
         wifiTrying = false;
         return false;
     }
@@ -43,7 +44,7 @@ bool reconnectWiFiNonBlocking() {
 
 void reconnectMQTT() {
     if (!client.connected()) {
-        Serial.print("🔄 Menghubungkan ke MQTT ThingsBoard...");
+        Serial.print(" Menghubungkan ke MQTT ThingsBoard...");
         if (client.connect("ESP32_Client", thingsboardToken, NULL)) {
             Serial.println("✅ Berhasil terhubung ke ThingsBoard!");
         } else {
@@ -103,14 +104,33 @@ void sendToThingsBoard() {
     Serial.print("JSON size: ");
     Serial.println(jsonSize);
     
+    doc["Size"] = jsonSize;
+    
     char payload[1024];
     serializeJson(doc, payload);
+
+    unsigned long waktuPengiriman = millis();
 
     Serial.print(" Payload JSON: ");
     Serial.println(payload);
 
     if (client.publish("v1/devices/me/telemetry", payload)) {
+        unsigned long waktuPenerimaan = millis();
+        unsigned long delayTotal = waktuPenerimaan - waktuPengiriman;
         Serial.println("✅ Berhasil mengirim telemetry!");
+
+        // Ambil waktu dari RTC
+        DateTime now = getRTCNow();
+        String timestamp = String(now.hour()) + ":" + String(now.minute()) + ":" + String(now.second());
+
+        // Kirim ke PLX-DAQ
+        Serial.print("DATA,");
+        Serial.print(timestamp); Serial.print(",");
+        Serial.print(jsonSize); Serial.print(",");
+        Serial.print(waktuPengiriman); Serial.print(",");
+        Serial.print(waktuPenerimaan); Serial.print(",");
+        Serial.println(delayTotal);
+        
     } else {
         Serial.println(" Gagal mengirim telemetry ke ThingsBoard!");
         Serial.print("MQTT State: ");

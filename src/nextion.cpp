@@ -2,9 +2,9 @@
 #include "globals.h"
 #include "pzem_reader.h"
 #include "RTC_reader.h"
-#include "storage_manager.h"   // untuk saveEnergyData()
+#include "storage_manager.h"  
 #include <WiFi.h>
-#include "barcode.h"  // Pastikan ditambahkan di nextion.cpp
+#include "barcode.h"  
 #include <WiFiManager.h>
 #include "tarif.h"
 
@@ -16,7 +16,7 @@ extern WiFiManager wm;
 extern void updateStatusWiFi();
 
 HardwareSerial* nextionSerial;
-int currentPage = 1;  // Default ke halaman Monitor1 saat awal
+int currentPage = 1;  
 
 void initNextion(HardwareSerial &serial) {
     nextionSerial = &serial;
@@ -33,14 +33,14 @@ void sendCommand(const String& cmd) {
 // Fungsi getCommand untuk mengambil data dari Nextion
 String getCommand(const String& command) {
     String response = "";
-    sendCommand(command);  // Mengirim perintah ke Nextion
+    sendCommand(command);  
     
     // Menunggu respon dari Nextion
-    delay(100);  // Pastikan delay cukup untuk Nextion mengirimkan respon
+    delay(100);  
     
     while (nextionSerial->available()) {
-        char c = nextionSerial->read();  // Membaca karakter dari serial
-        if (c != 0xFF) {  // Hanya ambil data yang valid
+        char c = nextionSerial->read();  
+        if (c != 0xFF) {  
             response += c;
         }
     }
@@ -198,7 +198,7 @@ void updateMonitor1() {
     sendCommand("Monitor1.t11.txt=\"" + String(hargaListrik, 2) + "\"");
     delay(10);
 
-     // Tambahkan bagian ini untuk waktu dan tanggal
+     //Waktu dan tanggal
      DateTime now = getRTCNow();
 
      char tanggal[20];
@@ -226,7 +226,7 @@ void updateMonitor2() {
     sendCommand("Monitor2.t7.txt=\"" + String(arus3, 2) + " A\"");
     sendCommand("Monitor2.t8.txt=\"" + String(daya3, 1) + " W\"");
 
-    // bedanya di sini:
+
     sendCommand("Monitor2.t9.txt=\"Rp " + String(BiayaTWP, 2) + "\"");
     sendCommand("Monitor2.t10.txt=\"" + String(totalEnergy, 2) + " kWh\"");
 

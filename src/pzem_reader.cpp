@@ -14,8 +14,7 @@ ModbusMaster node1, node2, node3;
 // float biayaWbp = 0.0;
 // float biayaLwbp = 0.0;
 
-void pzemInit() { // Fungsi inisialisasi
-    // Serial.begin(115200);
+void pzemInit() { 
     Serial2.begin(9600, SERIAL_8N1, 16, 17);
 
     // Inisialisasi PZEM
@@ -25,13 +24,11 @@ void pzemInit() { // Fungsi inisialisasi
 }
 
 float totalBiaya = 0.0;
-// float totalEnergyPrev = 0.0;  // Menyimpan total energi sebelumnya
-// float energyWbp = 0.0;        // Energi yang dikonsumsi saat jam WBP
-// float energyLwbp = 0.0;       // Energi yang dikonsumsi saat jam LWBP
 
-void readPzemData() { // Fungsi membaca data
-    static unsigned long lastReadTime = 0; // Timer untuk membaca data
-    if (millis() - lastReadTime < 1000) return; // Baca setiap 1 detik
+
+void readPzemData() { 
+    static unsigned long lastReadTime = 0; 
+    if (millis() - lastReadTime < 1000) return; 
     lastReadTime = millis();
 
     energi1 = 0.0, energi2 = 0.0, energi3 = 0.0; // Variabel energi tiap fase
@@ -61,7 +58,7 @@ void readPzemData() { // Fungsi membaca data
         tegangan2 = node2.getResponseBuffer(0x00) / 10.0f;
         arus2 = node2.getResponseBuffer(0x01) / 1000.0f;
         daya2 = node2.getResponseBuffer(0x03) / 10.0f;
-        energi2 = node2.getResponseBuffer(0x05) / 1000.0f;  // Diperbaiki
+        energi2 = node2.getResponseBuffer(0x05) / 1000.0f;  
         frekuensi2 = node2.getResponseBuffer(0x07) / 10.0f;
         faktorDaya2 = node2.getResponseBuffer(0x08) / 100.0f;
 
@@ -78,7 +75,7 @@ void readPzemData() { // Fungsi membaca data
         tegangan3 = node3.getResponseBuffer(0x00) / 10.0f;
         arus3 = node3.getResponseBuffer(0x01) / 1000.0f;
         daya3 = node3.getResponseBuffer(0x03) / 10.0f;
-        energi3 = node3.getResponseBuffer(0x05) / 1000.0f;  // Diperbaiki
+        energi3 = node3.getResponseBuffer(0x05) / 1000.0f;  
         frekuensi3 = node3.getResponseBuffer(0x07) / 10.0f;
         faktorDaya3 = node3.getResponseBuffer(0x08) / 100.0f;
 
@@ -112,16 +109,16 @@ void readPzemData() { // Fungsi membaca data
         if (deltaEnergy > 0) {
             bool isWBP = false;
             // if (now.hour() >= 18 && now.hour() < 24) {
-            if ((now.hour() == 18 && now.minute() >= 30) ||  // 18:30 - 18:59
-                (now.hour() >= 19 && now.hour() < 24) ||     // 19:00 - 23:59
-                (now.hour() == 0 && now.minute() <= 28)) {   // 00:00 - 00:15
+            if ((now.hour() == 18 && now.minute() >= 30) ||  
+                (now.hour() >= 19 && now.hour() < 24) ||     
+                (now.hour() == 0 && now.minute() <= 28)) {   
                 isWBP = true;
             }
             if (isWBP) {
-                energyWbp += deltaEnergy;  // Tambahkan energi ke kategori WBP
+                energyWbp += deltaEnergy;  
                 Serial.printf("Waktu Wbp");
             } else {
-                energyLwbp += deltaEnergy;  // Tambahkan energi ke kategori LWBP
+                energyLwbp += deltaEnergy;  
                 Serial.printf("Waktu Lwbp");
             }
         }
@@ -157,7 +154,7 @@ void readPzemData() { // Fungsi membaca data
     }    
 
     void resetEnergy() {
-        Serial.println("🔴 Mengirim perintah reset energi ke semua PZEM...");
+        Serial.println(" Mengirim perintah reset energi ke semua PZEM...");
     
         uint8_t resetCommand[] = {0x01, 0x42, 0x00, 0x00}; // Contoh untuk PZEM alamat 0x01
         uint16_t crc = calculateCRC(resetCommand, 2); // Hitung CRC untuk 2 byte pertama

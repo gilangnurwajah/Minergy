@@ -13,7 +13,7 @@ void generateQRCode(const String& ssid, const String& password, const String& ip
 
     sendCommand("qr0.txt=\"" + qrData + "\"");
 
-    // Jika ingin menampilkan IP di layar, lakukan terpisah via t2.txt
+
 }
 
 

@@ -9,14 +9,14 @@ void loadTarifFromStorage() {
     tarifPrefs.begin("tarif", true);  // mode read
 
     // Memuat nilai tarif dari Preferences
-    hargaListrik = tarifPrefs.getFloat("hargaListrik", hargaListrik);  // Jika belum ada data, menggunakan nilai default yang ada di globals.cpp
+    hargaListrik = tarifPrefs.getFloat("hargaListrik", hargaListrik); 
     hargaWbp     = tarifPrefs.getFloat("hargaWbp", hargaWbp);
     hargaLwbp    = tarifPrefs.getFloat("hargaLwbp", hargaLwbp);
 
     tarifPrefs.end();  // Menutup akses ke Preferences
 
     // Menampilkan tarif yang dimuat ke serial monitor
-    Serial.printf("📦 Tarif dimuat: REG=%.2f, WBP=%.2f, LWBP=%.2f\n", hargaListrik, hargaWbp, hargaLwbp);
+    Serial.printf(" Tarif dimuat: REG=%.2f, WBP=%.2f, LWBP=%.2f\n", hargaListrik, hargaWbp, hargaLwbp);
 }
 
 // Fungsi untuk memproses input tarif

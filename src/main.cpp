@@ -7,13 +7,13 @@
 #include "sendToThingsBoard.h"
 #include "storage_manager.h"
 #include "nextion.h"
-#include "barcode.h"  // Tambahkan ini di bagian atas
+#include "barcode.h"  
 #include "tarif.h"
 
-#define BUTTON_WIFI 13  // Tombol untuk masuk ke mode WiFi Manager
-#define BUTTON_RESET 32  // Tombol reset energi dan biaya
-#define LED_RED 12       // LED Merah (untuk koneksi gagal)
-#define LED_GREEN 14     // LED Hijau (untuk koneksi berhasil)
+#define BUTTON_WIFI 13  
+#define BUTTON_RESET 32  
+#define LED_RED 12       
+#define LED_GREEN 14     
 #define NEXTION_RX 26
 #define NEXTION_TX 27
 
@@ -23,9 +23,9 @@ PubSubClient client(espClient);
 Preferences preferences;
 
 bool wifiManagerActive = false;
-const char* mqtt_server = "34.232.35.38";  // Pakai IP langsung
-// const char* mqtt_server = "thingsboard.cloud";  // Pakai IP langsung
-const char *thingsboardToken = "Minergy1";  // Ganti dengan token asli
+const char* mqtt_server = "34.232.35.38";  //IP 
+// const char* mqtt_server = "thingsboard.cloud"; 
+const char *thingsboardToken = "Minergy3";  
 const int THINGSBOARD_PORT = 1883;
 
 
@@ -42,7 +42,8 @@ WiFiManager wm;
 
 void setup() {
     Serial.begin(115200);
-
+    Serial.println("CLEARDATA");
+    Serial.println("LABEL,Timestamp,UkuranData,WaktuPengiriman,WaktuPenerimaan,DelayTotal");
     //untuk input
     storageInit(); 
     loadTarifFromStorage();
@@ -84,14 +85,12 @@ void loop() {
     static unsigned long lastSensorRead = 0;
     static unsigned long lastWiFiCheck = 0;
     static unsigned long lastThingsBoardSend = 0;
-    static unsigned long lastNextionUpdate = 0;  // ⬅️ Tambahan ini
+    static unsigned long lastNextionUpdate = 0;  
 
-    static const unsigned long sensorInterval = 1500;       // 6 detik
-    static const unsigned long wifiCheckInterval = 8000;   // 10 detik
-    static const unsigned long tbSendInterval = 15000;      // 15 detik
-    static const unsigned long nextionUpdateInterval = 1000; // ⏱️ 1 detik
-
-    // ✅ Selalu tangani input dari Nextion secepat mungkin
+    static const unsigned long sensorInterval = 1500;       
+    static const unsigned long wifiCheckInterval = 8000;   
+    static const unsigned long tbSendInterval = 5000;     
+    static const unsigned long nextionUpdateInterval = 1000; 
     handleNextionInput();
 
 
@@ -111,7 +110,7 @@ void loop() {
         lastWiFiCheck = millis();
     }
 
-    // ✅ Baca sensor & update Nextion berkala
+    // Baca sensor & update Nextion berkala
     if (millis() - lastSensorRead > sensorInterval) {
         printDateTime();
         readPzemData();
@@ -122,7 +121,7 @@ void loop() {
         lastSensorRead = millis();
     }
 
-    // ✅ Kirim ke ThingsBoard jika WiFi tersedia
+    //  Kirim ke ThingsBoard jika WiFi tersedia
     static unsigned long lastWiFiMessage = 0;
 
     if (WiFi.status() == WL_CONNECTED) {
@@ -138,14 +137,14 @@ void loop() {
         client.loop();
     } else {
         if (millis() - lastWiFiMessage > 7000) {
-            Serial.println("⚠️ WiFi tidak terhubung, hanya membaca data sensor...");
+            Serial.println(" WiFi tidak terhubung, hanya membaca data sensor...");
             lastWiFiMessage = millis();
         }
         client.loop();  // Tetap jalankan loop MQTT meskipun offline
     }
     
 
-    // ✅ Tangani tombol RESET ENERGI
+    // tombol RESET ENERGI
     static unsigned long lastButtonPress = 0;
     if (digitalRead(BUTTON_RESET) == LOW && millis() - lastButtonPress > 1000) {
         lastButtonPress = millis();
@@ -166,7 +165,7 @@ void loop() {
         }
     }
 
-    // ✅ Tangani tombol WiFi Manager
+    // tombol WiFi Manager
     if (digitalRead(BUTTON_WIFI) == LOW && millis() - lastButtonPress > 1000) {
         lastButtonPress = millis();
         if (digitalRead(BUTTON_WIFI) == LOW) {
@@ -175,9 +174,9 @@ void loop() {
                 if (millis() - pressStart > 3000) {
                     Serial.println("🔵 Masuk Mode WiFi Manager...");
                     if (wm.startConfigPortal("ESP_Config", "1Def23G5")) {
-                        Serial.println("✅ WiFi dikonfigurasi.");
+                        Serial.println(" WiFi dikonfigurasi.");
                     } else {
-                        Serial.println("⚠️ Timeout WiFi config, reconnect terakhir...");
+                        Serial.println(" Timeout WiFi config, reconnect terakhir...");
                         WiFi.reconnect();
                     }
                     updateStatusWiFi();
@@ -206,7 +205,6 @@ void loop() {
     sendCommand("t2.txt=\"" + WiFi.softAPIP().toString() + "\"");
 
     // Generate QR code dengan SSID, password, dan IP
-    // ✅ Buat QR code untuk koneksi WiFi
     String ip = WiFi.softAPIP().toString();
     generateQRCode("ESP_Config", "1Def23G5", ip);
 }
